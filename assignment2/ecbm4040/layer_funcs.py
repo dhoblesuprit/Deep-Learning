@@ -151,10 +151,38 @@ def conv2d_forward(x, w, b, pad, stride):
     #                                                                     #
     #                                                                     #
     #######################################################################
-    raise NotImplementedError
+
+    N, H, W, C = x.shape
+    F, HH, WW, _ = w.shape
+    H_filter = 1 + (H + 2 * pad - HH) // stride
+    W_filter = 1 + (W + 2 * pad - WW) // stride
+    print(H_filter)
+    print(W_filter)
+
+    A = np.zeros((N, F, HH, WW))
+
+    npad = ((0, 0), (pad, pad), (pad, pad), (0, 0))
+
+    # Pad the input with zeros
+    x = np.pad(x, pad_width=npad, mode='constant', constant_values=0)
+    #print(x.shape)
+    for i in range(N):  # ith example
+        for j in range(F):  # jth filter
+            # Convolve this filter over windows
+            for k in range(H_filter):
+                hs = k * stride
+                for l in range(W_filter):
+                    ws = l * stride
+                    # Window we want to apply the respective jth filter over (C, HH, WW)
+                    window = x[i, hs:hs + HH, ws:ws + WW, :]
+                    # Convolve
+                    A[i, k, l, j] = np.sum(window * w[j:,:,:]) + b[j]
+    return A
+
+    #raise NotImplementedError
 
 
-def conv2d_backward(d_top, x, w, b, pad, stride):
+def conv2d_backward(dout, x, w, b, pad, stride):
     """
     (Optional, but if you solve it correctly, we give you +10 points for this assignment.)
     A lite Numpy implementation of 2-D image convolution back-propagation.
@@ -184,5 +212,44 @@ def conv2d_backward(d_top, x, w, b, pad, stride):
     #                                                                     #
     #                                                                     #
     #######################################################################
-    raise NotImplementedError
+
+    N, H, W, C = x.shape
+    F, HH, WW, _ = w.shape
+    H_filter = dout.shape[1]
+    W_filter = dout.shape[2]
+
+    # Initialize matrices for gradients
+    dx = np.zeros_like(x)
+    dw = np.zeros_like(w)
+    db = np.zeros_like(b)
+
+    padded = np.pad(x, [(0, 0), (0, 0), (pad, pad), (pad, pad)], 'constant')
+    padded_dx = np.pad(dx, [(0, 0), (0, 0), (pad, pad), (pad, pad)], 'constant')
+
+    # Backpropagate dout through each input patch and each convolution filter
+    for i in xrange(N):  # ith example
+        for j in xrange(F):  # jth filter
+            # Convolve this filter over windows
+            for k in xrange(Hp):
+                hs = k * stride
+                for l in xrange(Wp):
+                    ws = l * stride
+
+                    # Window we applies the respective jth filter over (C, HH, WW)
+                    window = padded[i, :, hs:hs + HH, ws:ws + WW]
+
+                    # Compute gradient of out[i, j, k, l] = np.sum(window*w[j]) + b[j]
+                    db[j] += dout[i, j, k, l]
+                    dw[j] += window * dout[i, j, k, l]
+                    padded_dx[i, :, hs:hs + HH, ws:ws + WW] += w[j] * dout[i, j, k, l]
+
+                    # "Unpad"
+    dx = padded_dx[:, :, pad:pad + H, pad:pad + W]
+    ###########################################################################
+    #                             END OF YOUR CODE                            #
+    ###########################################################################
+    return dx[:, :, pad:-pad, pad:-pad], dw, db
+
+
+    #raise NotImplementedError
 

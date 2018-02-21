@@ -18,8 +18,8 @@ def dropout_forward(x, dropout_config, mode):
     - cache: (train phase) cache a random dropout mask used in feedforward process
              (test phase) None
     """
-    keep_prob = dropout_config.get("keep_prob", 0.7)
-
+    p = dropout_config.get("keep_prob", 0.7)
+    mask = None
     out, cache = None, None
     if mode == "train":
         ###########################################
@@ -27,13 +27,22 @@ def dropout_forward(x, dropout_config, mode):
         # Remember to return retention mask for   #
         # backward.                               #
         ###########################################
-        raise NotImplementedError
+
+        mask = (np.random.rand(*x.shape) < p) / p
+        out = x * mask
+
+        #raise NotImplementedError
     elif mode == "test":
+        out = x
         ##########################################
         # TODO: Implement test phase dropout. No #
         # need to use mask here.                 #
         ##########################################
-        raise NotImplementedError
+        #raise NotImplementedError
+
+    cache = mask
+    out = out.astype(x.dtype, copy=False)
+
     return out, cache
 
 
@@ -93,6 +102,7 @@ def bn_forward(x, gamma, beta, bn_params, mode):
 
     out, mean, var = None, None, None
     if mode == "train":
+        pass
         #############################################################
         # TODO: Batch normalization forward train mode               #
         #      1. calculate mean and variance of input x            #
@@ -102,12 +112,15 @@ def bn_forward(x, gamma, beta, bn_params, mode):
         #      4. remenber to use moving average method to update   #
         #         moving_mean and moving_var in the bn_params       #
         #############################################################
-        raise NotImplementedError
+
+
+        #raise NotImplementedError
     elif mode == 'test':
+        pass
         #######################################################################
         # TODO: Batch normalization forward test mode                         #
         #######################################################################
-        raise NotImplementedError
+        #raise NotImplementedError
 
     # cache for back-propagation
     cache = (x, gamma, beta, eps, mean, var)

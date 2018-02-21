@@ -147,10 +147,17 @@ class SGDmomentumOptim(Optimizer):
         # get all parameters and their gradients
         params = model.params
         grads = model.grads
+
+        for k in grads:
+            ## update each parameter
+            velocitys[k] = velocitys[k] * momentum + learning_rate * grads[k]
+            params[k] -= velocitys[k]
+
+
         ###################################################
         # TODO: SGD + Momentum, Update params and velocitys#
         ###################################################
-        raise NotImplementedError
+        #raise NotImplementedError
 
 
 class RMSpropOptim(Optimizer):
@@ -168,7 +175,7 @@ class RMSpropOptim(Optimizer):
             cache[k] = np.zeros_like(v)
         self.cache = cache
 
-    def step(self, model, learning_rate):
+    def step(self, model, learning_rate=1e-3):
         """
         Implement a one-step RMSprop update on network's parameters
         And a good default learning rate can be 0.001.
@@ -183,10 +190,16 @@ class RMSpropOptim(Optimizer):
 
         # create two new dictionaries containing all parameters and their gradients
         params, grads = model.params, model.grads
+
+        for k in grads:
+            ## update each parameter
+            cache[k] = gamma * cache[k] + (1 - gamma) * grads[k]**2
+            params[k] -= params[k] - (learning_rate * grads[k] / (cache[k]**0.5 + eps))
+
         ###################################################
         # TODO: RMSprop, Update params and cache           #
         ###################################################
-        raise NotImplementedError
+        #raise NotImplementedError
 
 
 class AdamOptim(Optimizer):
@@ -228,8 +241,20 @@ class AdamOptim(Optimizer):
         t = self.t
         # create two new dictionaries containing all parameters and their gradients
         params, grads = model.params, model.grads
+
+        for k in grads:
+            ## update each parameter
+            t += 1
+            momentums[k] = beta1 * momentums[k] + (1 - beta1) * grads[k]
+            velocitys[k] = beta2 * velocitys[k] + (1 - beta2) * grads[k]**2
+
+            momentum = momentums[k] / (1 - beta1**t)
+            velocity = velocitys[k] / (1 - beta2**t)
+            params[k] -= params[k] - (learning_rate * momentum / (velocity**0.5 + eps))
+
+
         ###################################################
         # TODO: Adam, Update t, momentums, velocitys and   #
         # params                                           #
         ###################################################
-        raise NotImplementedError
+        #raise NotImplementedError
